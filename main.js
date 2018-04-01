@@ -34,8 +34,38 @@ bot.onText(/\/start/, (msg,match) => {
                 bot.sendMessage(msg.chat.id,"Usted ya esta en la base de datos");
             }
         });
-
 });
 
+bot.onText(/\/AnadeFecha/, (msg) => {
+    let chat_id = msg.chat.id;
+    let keyboard = get_day_keyboard(23,32);
+    console.log(keyboard);
+    bot.sendMessage(chat_id,"Por favor selecciona la Hora",{
+        reply_markup: {
+            inline_keyboard: keyboard,
+        }
+    });
+})
+
+
+let get_day_keyboard = (min,max) =>{
+    let keyboard = get_header("MONTH");
+    return keyboard;
+}
+let get_header = (header) => {
+    return [[set_btn("<",null),set_btn(header,null),set_btn(">",null)],
+    [set_btn("L",null),set_btn("M",null),set_btn("X",null),set_btn("J",null),set_btn("V",null),set_btn("S",null),set_btn("D",null)]];
+}
+let set_btn = (btntext,data) => {
+    if(data === null){
+        data = 0;
+    }
+    return {text: btntext,callback_data: data};
+};
+let get_hour_keyboard_item = (hour) =>{
+    return {text: `${hour.toString()}:00`,
+            callback_data: hour.toString(),
+            callback_}
+};
 
 
