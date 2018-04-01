@@ -1,4 +1,4 @@
-const Sequalize =  require('sequelize');
+const Sequelize =  require('sequelize');
 
 const options = {
     host: 'localhost',
@@ -13,56 +13,49 @@ const options = {
     operatorsAliases: false
 };
 
-const sequalize = new Sequalize("sqlite:db/db.sqlite",options);
+const sequelize = new Sequelize("sqlite:db/db.sqlite",options);
 
-const User = sequalize.define('users', {
+const User = sequelize.define('users', {
     id: {
         primaryKey: true,
-        type: Sequalize.INTEGER,
+        type: Sequelize.INTEGER,
         allowNull: false,
         validate: {
-            notNull: {msg: "El id no puede ser nulo"},
-            isInt: {msg : "El id debe ser un numero"}
+            isInt: {msg : "El id debe ser un numero"},
         }
     },
-    usuario: {type: Sequalize.STRING,
+    usuario: {type: Sequelize.STRING,
          allowNull: false,
          allowEmpty: false,
          validate:{
-             notNull: {msg: "El usuario no puede ser nulo"},
              notEmpty: {msg: "El usuario no puede estar vacío"}
          }
     }
 });
 
-const Asamblea = sequalize.define('asamblea',{
+const Asamblea = sequelize.define('asamblea',{
     id: {
         primaryKey: true,
-        type: Sequalize.INTEGER,
+        type: Sequelize.INTEGER,
         allowNull: false,
         validate: {
-            notNull: {msg: "El id no puede ser nulo"},
             isInt: {msg : "El id debe ser un numero"}
         }
     },
     fecha:{
-        type: Sequalize.DATEONLY,
+        type: Sequelize.DATEONLY,
         allowNull: false,
         allowEmpty: false,
         validate:{
-            notNull: {msg: "El usuario no puede ser nulo"},
-            notEmpty: {msg: "El usuario no puede estar vacío"},
             isDate: {msg: "La fecha debe de ser una fecha valida"},
             isAfter: "2018-4-1"
         }    
     },
      hora:{
-        type: Sequalize.INTEGER,
+        type: Sequelize.INTEGER,
         allowNull: false,
         allowEmpty: false,
         validate: {
-            notNull: {msg: "La hora no puede ser nula"},
-            notEmpty: {msg: "La hora no puede esta vacia"},
             isInt: {msg: "la hora debe de ser un entero"},
             max: {args: 23,msg: "La hora tiene que ser menor que 23"},
             min: {args: 0, msg: "La hora debe de ser mayor que 0"}
@@ -70,52 +63,45 @@ const Asamblea = sequalize.define('asamblea',{
     } 
 });
 
-const Vote = sequalize.define('votes',{
+const Vote = sequelize.define('votes',{
     id: {
         primaryKey: true,
-        type: Sequalize.INTEGER,
+        type: Sequelize.INTEGER,
         allowNull: false,
         validate: {
-            notNull: {msg: "El id no puede ser nulo"},
             isInt: {msg : "El id debe ser un numero"}
         }
     },
     votante:{
-        type: Sequalize.INTEGER,
+        type: Sequelize.INTEGER,
         allowNull: false,
         allowEmpty: false,
         validate: {
-            notNull: {msg: "El votante no puede ser nulo"},
             isInt: {msg : "El votante debe ser un numero"}
         } 
     },
     asamblea:{
-        type: Sequalize.INTEGER,
+        type: Sequelize.INTEGER,
         allowNull: false,
         allowEmpty: false,
         validate: {
-            notNull: {msg: "La asamblea no puede ser nulo"},
             isInt: {msg : "La asamblea debe ser un numero"}
         } 
     },
     fecha:{
-        type: Sequalize.DATEONLY,
+        type: Sequelize.DATEONLY,
         allowNull: false,
         allowEmpty: false,
         validate:{
-            notNull: {msg: "El usuario no puede ser nulo"},
-            notEmpty: {msg: "El usuario no puede estar vacío"},
             isDate: {msg: "La fecha debe de ser una fecha valida"},
             isAfter: "2018-4-1"
         }    
     },
     hora:{
-        type: Sequalize.INTEGER,
+        type: Sequelize.INTEGER,
         allowNull: false,
         allowEmpty: false,
         validate: {
-            notNull: {msg: "La hora no puede ser nula"},
-            notEmpty: {msg: "La hora no puede esta vacia"},
             isInt: {msg: "la hora debe de ser un entero"},
             max: {args: 23,msg: "La hora tiene que ser menor que 23"},
             min: {args: 0, msg: "La hora debe de ser mayor que 0"}
@@ -123,12 +109,18 @@ const Vote = sequalize.define('votes',{
     } 
 });
 
-sequalize.sync().catch(error => {
+sequelize.sync().then(() => {
+    console.log("Se ha cargado la base de datos");
+}).catch(error => {
     console.log(error);
 });
 
+exports.getMaxId = () =>{
+    
+};
+
 module.exports = {
-    sequalize,
+    sequelize,
     User,
     Vote,
     Asamblea
