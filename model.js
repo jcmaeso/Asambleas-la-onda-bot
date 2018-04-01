@@ -3,6 +3,7 @@ const Sequalize =  require('sequelize');
 const options = {
     host: 'localhost',
     dialect: 'sqlite',
+    logging: false,
     pool: {
       max: 5,
       min: 0,
@@ -12,10 +13,12 @@ const options = {
     operatorsAliases: false
 };
 
-const sequelize = new Sequalize("sqlite:/db/db.sqlite",options);
+const sequalize = new Sequalize("sqlite:db/db.sqlite",options);
 
-const User = sequelize.define('users', {
-    id: {type: Sequalize.INTEGER,
+const User = sequalize.define('users', {
+    id: {
+        primaryKey: true,
+        type: Sequalize.INTEGER,
         allowNull: false,
         validate: {
             notNull: {msg: "El id no puede ser nulo"},
@@ -32,8 +35,10 @@ const User = sequelize.define('users', {
     }
 });
 
-const Asamblea = sequelize.define('asamblea',{
-    id: {type: Sequalize.INTEGER,
+const Asamblea = sequalize.define('asamblea',{
+    id: {
+        primaryKey: true,
+        type: Sequalize.INTEGER,
         allowNull: false,
         validate: {
             notNull: {msg: "El id no puede ser nulo"},
@@ -41,7 +46,7 @@ const Asamblea = sequelize.define('asamblea',{
         }
     },
     fecha:{
-        type: Sequalize.DATE,
+        type: Sequalize.DATEONLY,
         allowNull: false,
         allowEmpty: false,
         validate:{
@@ -51,8 +56,8 @@ const Asamblea = sequelize.define('asamblea',{
             isAfter: "2018-4-1"
         }    
     },
-    hora:{
-        type: sequelize.INTEGER,
+     hora:{
+        type: Sequalize.INTEGER,
         allowNull: false,
         allowEmpty: false,
         validate: {
@@ -62,10 +67,19 @@ const Asamblea = sequelize.define('asamblea',{
             max: {args: 23,msg: "La hora tiene que ser menor que 23"},
             min: {args: 0, msg: "La hora debe de ser mayor que 0"}
         }
-    }
+    } 
 });
 
-const Vote = sequelize.define('votes',{
+const Vote = sequalize.define('votes',{
+    id: {
+        primaryKey: true,
+        type: Sequalize.INTEGER,
+        allowNull: false,
+        validate: {
+            notNull: {msg: "El id no puede ser nulo"},
+            isInt: {msg : "El id debe ser un numero"}
+        }
+    },
     votante:{
         type: Sequalize.INTEGER,
         allowNull: false,
@@ -85,7 +99,7 @@ const Vote = sequelize.define('votes',{
         } 
     },
     fecha:{
-        type: Sequalize.DATE,
+        type: Sequalize.DATEONLY,
         allowNull: false,
         allowEmpty: false,
         validate:{
@@ -96,7 +110,7 @@ const Vote = sequelize.define('votes',{
         }    
     },
     hora:{
-        type: sequelize.INTEGER,
+        type: Sequalize.INTEGER,
         allowNull: false,
         allowEmpty: false,
         validate: {
@@ -109,12 +123,12 @@ const Vote = sequelize.define('votes',{
     } 
 });
 
-sequelize.sync().catch(error => {
-    
+sequalize.sync().catch(error => {
+    console.log(error);
 });
 
 module.exports = {
-    sequelize,
+    sequalize,
     User,
     Vote,
     Asamblea
