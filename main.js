@@ -1,3 +1,4 @@
+
 const TelegramBot = require('node-telegram-bot-api');
 const model = require('./model');
 const token = '559647678:AAFTXQnd6-VV50Itor04qxHob2FwmAh7FzM';
@@ -11,6 +12,7 @@ const botOptions = {
 };
 
 const bot = new TelegramBot(token,botOptions);
+
 
 bot.onText(/\/echo (.+)/, (msg,match) => {
     let reponseMsg = `Su chat id es: ${msg.chat.id}
@@ -47,6 +49,59 @@ bot.onText(/\/AnadeFecha/, (msg) => {
     console.log("Display Inline Keyboard");
 })
 
+bot.on('callback_query', callbackQuery => {
+    const data = callbackQuery.data;
+    const msg = callbackQuery.message;
+    const regExp = new RegExp(/[1-9]+/);
+    const min = 9;
+    const max = 21;
+
+    let horas = [];
+    if(!regExp.test(data)){
+        bot.sendMessage(msg.chat.id,"Has elegido una opcion no valida\nVuelve a elegir");
+        console.log(`Opcion de fecha invalida de ${msg.chat.username}`);
+        return;
+    }
+
+    bot.editMessageText(`Has elegido el dia ${data}`, {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+    });
+    bot.sendMessage(msg.chat.id,"Elige las horas que quieres:",{
+        reply_markup: {
+            keyboard: get_hour_keyboard(min,max)
+        }
+    }).then( () => {
+
+        let it = max-min;
+        let validateHour = new RegExp(/[0-9]?[0-9]:00/);
+        let read_msg = (number_of_it_left) => {
+            bot.once('message', answer =>{
+                if(answer.text === "final"){
+                    bot.sendMessage(msg.chat.id, `Fin de introducion de valores de horas`); 
+                    console.log("Fin de espera");
+                    return;
+                }
+                if(!validateHour.test(answer.text)){
+                    console.log("Error de intro");
+                    bot.sendMessage(msg.chat.id, `Valor no valido`); 
+                    read_msg(number_of_it_left);
+                    return;
+                }
+                let hour_text = validateHour.exec(answer.text)[0];
+                bot.sendMessage(msg.chat.id, `Ha elegido correctamente ${hour_text}`); 
+                horas.push(hour_text);
+                read_msg(number_of_it_left--);
+            });
+        };
+        read_msg(it);
+    });
+});
+
+/* bot.onText(/[0-9]?[0-9]:00/, (msg,match) =>{
+    bot.sendMessage(msg.chat.id, `Ha elegido correctamente + ${match}`); 
+}); */
+
 bot.on("error", error =>{
     console.log(error.msg);
 })
@@ -64,7 +119,7 @@ let get_header = (header) => {
 }
 let set_btn = (btntext,data) => {
     if(data === null){
-        data = 0;
+        data = "NULL";
     }
     return {text: btntext,callback_data: data};
 };
@@ -115,4 +170,11 @@ let get_month_name = month => {
 
 }
 
+let get_hour_keyboard = (min,max) => {
+    let keyboard = [];
+    for(let i = min; i <= max; i++){
+        keyboard.push([`HORA: ${i}:00`]);
+    }
+    return keyboard;
+}
 
