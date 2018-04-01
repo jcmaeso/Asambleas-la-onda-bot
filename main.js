@@ -77,7 +77,7 @@ bot.on('callback_query', callbackQuery => {
         let validateHour = new RegExp(/[0-9]?[0-9]:00/);
         let read_msg = (number_of_it_left) => {
             bot.once('message', answer =>{
-                if(answer.text === "final"){
+                if(answer.text === "final" || number_of_it_left === 0){
                     bot.sendMessage(msg.chat.id, `Fin de introducion de valores de horas`); 
                     console.log("Fin de espera");
                     return;
@@ -89,6 +89,12 @@ bot.on('callback_query', callbackQuery => {
                     return;
                 }
                 let hour_text = validateHour.exec(answer.text)[0];
+                if(horas.includes(hour_text)){
+                    console.log("Hora repetida");
+                    bot.sendMessage(msg.chat.id, `Valor Repetido`);
+                    read_msg(number_of_it_left);
+                    return;
+                }
                 bot.sendMessage(msg.chat.id, `Ha elegido correctamente ${hour_text}`); 
                 horas.push(hour_text);
                 read_msg(number_of_it_left--);
