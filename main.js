@@ -53,17 +53,17 @@ bot.onText(/\/AnadeFecha/, (msg) => {
     });
     console.log("Display Inline Keyboard");
 })
-
+//TODO: CAMBIAR EL MODELO DE DATOS DE LAS QUERYS
 bot.on('callback_query', callbackQuery => {
+    const min = 9;
+    const max = 21;
     const data = callbackQuery.data;
     const msg = callbackQuery.message;
     const regExp = new RegExp(/[1-9]+/);
-    const min = 9;
-    const max = 21;
-    let it = max-min;
     let validateHour = new RegExp(/[0-9]?[0-9]:00/);
+    let it = max-min;
     let horas = [];
-    let counter = 0;
+    let date;
 
 
     let read_msg = (number_of_it_left) => {
@@ -74,8 +74,11 @@ bot.on('callback_query', callbackQuery => {
                         reply_markup:{
                             hide_keyboard: true
                         }
-                    }); 
-                    return resolve();
+                    });
+                    if(horas.length === 0){
+                        reject(new Error("No se han registrado horas"));
+                    }
+                    return resolve(horas);
                 }
                 if(!validateHour.test(answer.text)){
                     console.log("Error de intro");
@@ -101,23 +104,59 @@ bot.on('callback_query', callbackQuery => {
         console.log(`Opcion de fecha invalida de ${msg.chat.username}`);
         return;
     }
-
+    //Creates the date object
+    date = new Date()
+    //Sends confirmation msg
     bot.editMessageText(`Has elegido el dia ${data}`, {
         chat_id: msg.chat.id,
         message_id: msg.message_id,
     });
+    //Sends message to enable hour keyboard
     bot.sendMessage(msg.chat.id,"Elige las horas que quieres:",{
         reply_markup: {
             keyboard: get_hour_keyboard(min,max)
         }
     }).then( () => {
         return read_msg(it);
+    }).then(horas => {
+        horas.forEach(hora => {
+            store_vote_DB(msg.chat.id,hora,date);
+        });
+    }).catch(error => {
+        console.log(error);
     });
 });
 
 bot.on("error", error =>{
     console.log(error.msg);
 })
+
+
+let store_vote_DB = (votante,hora,fecha) => {
+    model.Asamblea.findAll({
+        where: {
+            hora: hora,
+            fecha: fecha
+        }
+    }).then(asamblea => {
+        //If there's not instance on DB, create one
+        if(asamblea === null){
+            console.log("Creada nueva a asamblea");
+            asamblea = Promise.resolve(model.Asamblea.create({
+                fecha: fecha,
+                hora: hora
+            }));
+        }
+        //Storage vote
+        model.Vote.create({
+            votante: votante,
+            asamblea: asamblea.id,
+            fecha: fecha,
+            hora: hora
+        });
+    });
+};
+
 
 
 let get_day_keyboard = (min,max) =>{
