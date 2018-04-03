@@ -11,6 +11,11 @@ const botOptions = {
     }
 };
 
+/*Text/Message constants*/
+
+const end_hour_message = `He terminado de introducir horas`; 
+
+/*Constant Objects*/
 const bot = new TelegramBot(token,botOptions);
 
 
@@ -57,14 +62,20 @@ bot.on('callback_query', callbackQuery => {
     const max = 21;
     let it = max-min;
     let validateHour = new RegExp(/[0-9]?[0-9]:00/);
+    let horas = [];
+    let counter = 0;
+
 
     let read_msg = (number_of_it_left) => {
         bot.once('message', answer =>{
             return new Promise((resolve, reject) =>{
-                if(answer.text === "final" || number_of_it_left === 0){
-                    bot.sendMessage(msg.chat.id, `Fin de introducion de valores de horas`); 
-                    console.log("Fin de espera");
-                    resolve();
+                if(answer.text === end_hour_message || number_of_it_left === 0){
+                    bot.sendMessage(msg.chat.id, `Fin de introducion de valores de horas`,{
+                        reply_markup:{
+                            hide_keyboard: true
+                        }
+                    }); 
+                    return resolve();
                 }
                 if(!validateHour.test(answer.text)){
                     console.log("Error de intro");
@@ -85,7 +96,6 @@ bot.on('callback_query', callbackQuery => {
     };
 
 
-    let horas = [];
     if(!regExp.test(data)){
         bot.sendMessage(msg.chat.id,"Has elegido una opcion no valida\nVuelve a elegir");
         console.log(`Opcion de fecha invalida de ${msg.chat.username}`);
@@ -178,6 +188,6 @@ let get_hour_keyboard = (min,max) => {
     for(let i = min; i <= max; i++){
         keyboard.push([`HORA: ${i}:00`]);
     }
+    keyboard.push([end_hour_message])
     return keyboard;
 }
-
