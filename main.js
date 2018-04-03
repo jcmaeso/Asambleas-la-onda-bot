@@ -104,10 +104,6 @@ bot.on('callback_query', callbackQuery => {
     });
 });
 
-/* bot.onText(/[0-9]?[0-9]:00/, (msg,match) =>{
-    bot.sendMessage(msg.chat.id, `Ha elegido correctamente + ${match}`); 
-}); */
-
 bot.on("error", error =>{
     console.log(error.msg);
 })
