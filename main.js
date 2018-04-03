@@ -55,6 +55,35 @@ bot.on('callback_query', callbackQuery => {
     const regExp = new RegExp(/[1-9]+/);
     const min = 9;
     const max = 21;
+    let it = max-min;
+    let validateHour = new RegExp(/[0-9]?[0-9]:00/);
+
+    let read_msg = (number_of_it_left) => {
+        bot.once('message', answer =>{
+            return new Promise((resolve, reject) =>{
+                if(answer.text === "final" || number_of_it_left === 0){
+                    bot.sendMessage(msg.chat.id, `Fin de introducion de valores de horas`); 
+                    console.log("Fin de espera");
+                    resolve();
+                }
+                if(!validateHour.test(answer.text)){
+                    console.log("Error de intro");
+                    bot.sendMessage(msg.chat.id, `Valor no valido`); 
+                    resolve(read_msg(number_of_it_left));
+                }
+                let hour_text = validateHour.exec(answer.text)[0];
+                if(horas.includes(hour_text)){
+                    console.log("Hora repetida");
+                    bot.sendMessage(msg.chat.id, `Valor Repetido`);
+                    resolve(read_msg(number_of_it_left));
+                }
+                bot.sendMessage(msg.chat.id, `Ha elegido correctamente ${hour_text}`); 
+                horas.push(hour_text);
+                resolve(read_msg(number_of_it_left--)); 
+            });
+        });
+    };
+
 
     let horas = [];
     if(!regExp.test(data)){
@@ -72,35 +101,7 @@ bot.on('callback_query', callbackQuery => {
             keyboard: get_hour_keyboard(min,max)
         }
     }).then( () => {
-
-        let it = max-min;
-        let validateHour = new RegExp(/[0-9]?[0-9]:00/);
-        let read_msg = (number_of_it_left) => {
-            bot.once('message', answer =>{
-                if(answer.text === "final" || number_of_it_left === 0){
-                    bot.sendMessage(msg.chat.id, `Fin de introducion de valores de horas`); 
-                    console.log("Fin de espera");
-                    return;
-                }
-                if(!validateHour.test(answer.text)){
-                    console.log("Error de intro");
-                    bot.sendMessage(msg.chat.id, `Valor no valido`); 
-                    read_msg(number_of_it_left);
-                    return;
-                }
-                let hour_text = validateHour.exec(answer.text)[0];
-                if(horas.includes(hour_text)){
-                    console.log("Hora repetida");
-                    bot.sendMessage(msg.chat.id, `Valor Repetido`);
-                    read_msg(number_of_it_left);
-                    return;
-                }
-                bot.sendMessage(msg.chat.id, `Ha elegido correctamente ${hour_text}`); 
-                horas.push(hour_text);
-                read_msg(number_of_it_left--);
-            });
-        };
-        read_msg(it);
+        return read_msg(it);
     });
 });
 
