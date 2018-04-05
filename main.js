@@ -58,17 +58,24 @@ bot.on('callback_query', callbackQuery => {
     const min = 9;
     const max = 21;
     const data = callbackQuery.data;
-    const msg = callbackQuery.message;
-    const regExp = new RegExp(/[1-9]+/);
+    let msg = callbackQuery.message;
+    const regExp = new RegExp(/[1-9]+ [0-9]/);
+    const splitDay = new RegExp(/[1-9]+/);
+    const splitMonth = new RegExp(/ [0-9]+/);
+    const setHourDb = new RegExp(/[0-9]+/);
     let validateHour = new RegExp(/[0-9]?[0-9]:00/);
     let it = max-min;
     let horas = [];
     let date;
+    let month;
+    let day;
+
+    console.log(data);
 
 
     let read_msg = (number_of_it_left) => {
-        bot.once('message', answer =>{
-            return new Promise((resolve, reject) =>{
+        let valid_hour;
+         bot.once('message', answer =>{        
                 if(answer.text === end_hour_message || number_of_it_left === 0){
                     bot.sendMessage(msg.chat.id, `Fin de introducion de valores de horas`,{
                         reply_markup:{
@@ -76,25 +83,28 @@ bot.on('callback_query', callbackQuery => {
                         }
                     });
                     if(horas.length === 0){
-                        reject(new Error("No se han registrado horas"));
+                        throw new Error("No se han registrado horas");
                     }
-                    return resolve(horas);
+                    horas.forEach(hora => {
+                        valid_hour = setHourDb.exec(hora)[0].trim();
+                        store_vote_DB(msg.chat.id,valid_hour,new Date(`${date.getFullYear()}/${parseInt(month)+1}/${day}`));
+                    });
+                    return;
                 }
                 if(!validateHour.test(answer.text)){
                     console.log("Error de intro");
                     bot.sendMessage(msg.chat.id, `Valor no valido`); 
-                    resolve(read_msg(number_of_it_left));
+                    read_msg(number_of_it_left);
                 }
                 let hour_text = validateHour.exec(answer.text)[0];
                 if(horas.includes(hour_text)){
                     console.log("Hora repetida");
                     bot.sendMessage(msg.chat.id, `Valor Repetido`);
-                    resolve(read_msg(number_of_it_left));
+                    read_msg(number_of_it_left);
                 }
                 bot.sendMessage(msg.chat.id, `Ha elegido correctamente ${hour_text}`); 
                 horas.push(hour_text);
-                resolve(read_msg(number_of_it_left--)); 
-            });
+                read_msg(number_of_it_left--); 
         });
     };
 
@@ -106,8 +116,10 @@ bot.on('callback_query', callbackQuery => {
     }
     //Creates the date object
     date = new Date()
+    day = splitDay.exec(data)[0];
+    month = splitMonth.exec(data)[0].trim();
     //Sends confirmation msg
-    bot.editMessageText(`Has elegido el dia ${data}`, {
+    bot.editMessageText(`Has elegido el dia ${data[0]} del mes ${data[1]}`, {
         chat_id: msg.chat.id,
         message_id: msg.message_id,
     });
@@ -117,11 +129,7 @@ bot.on('callback_query', callbackQuery => {
             keyboard: get_hour_keyboard(min,max)
         }
     }).then( () => {
-        return read_msg(it);
-    }).then(horas => {
-        horas.forEach(hora => {
-            store_vote_DB(msg.chat.id,hora,date);
-        });
+        read_msg(it);
     }).catch(error => {
         console.log(error);
     });
@@ -133,28 +141,50 @@ bot.on("error", error =>{
 
 
 let store_vote_DB = (votante,hora,fecha) => {
-    model.Asamblea.findAll({
-        where: {
-            hora: hora,
-            fecha: fecha
-        }
-    }).then(asamblea => {
-        //If there's not instance on DB, create one
-        if(asamblea === null){
-            console.log("Creada nueva a asamblea");
-            asamblea = Promise.resolve(model.Asamblea.create({
-                fecha: fecha,
-                hora: hora
-            }));
-        }
-        //Storage vote
+    console.log(fecha);
+    console.log(hora);
+    console.log(votante);
+
+    let validate_data = () =>{
+        return new Promise((resolve,reject) =>{
+            model.Asamblea.findOne({where: {
+                hora: hora,
+                fecha: fecha
+            }}).then(asamblea  => {
+                console.log("error dsd");
+                console.log(asamblea);
+                if(asamblea === null){
+                    console.log("entro");
+                    reject(new Error("No hay asamblea en este dia creada"));
+                }else{
+                    resolve(asamblea.id);
+                }
+            })
+        });
+    }
+    let insert_data = id =>{
         model.Vote.create({
             votante: votante,
-            asamblea: asamblea.id,
+            asamblea: id,
             fecha: fecha,
-            hora: hora
-        });
-    });
+            hora: hora 
+        }).catch(error => {
+            console.log(error);
+        })
+    }
+    validate_data().then(insert_data).catch(error =>{
+        if(error.message === "No hay asamblea en este dia creada"){
+            model.Asamblea.create({
+                fecha: fecha,
+                hora: hora
+            }).then(asamblea =>{
+                console.log("Error +"+asamblea);
+                insert_data(asamblea.id);
+            })
+            return;
+        }
+        console.log(error)
+    })
 };
 
 
@@ -186,7 +216,7 @@ let get_days = (date) =>{
     let c_date;
     for(let i = 1; i <= get_end_of_month(date.getMonth()+1,date.getFullYear()); i++){
         c_date = new Date(`${date.getFullYear()}/${date.getMonth()+1}/${i}`);
-        week.push(set_btn(i,i));
+        week.push(set_btn(i,`${i} ${date.getMonth()}`));
         if(c_date.getDay() === 0){
             weeks.push(week);
             week = [];

@@ -36,6 +36,7 @@ const User = sequelize.define('users', {
 const Asamblea = sequelize.define('asamblea',{
     id: {
         primaryKey: true,
+        autoIncrement: true,
         type: Sequelize.INTEGER,
         allowNull: false,
         validate: {
@@ -58,7 +59,6 @@ const Asamblea = sequelize.define('asamblea',{
         validate: {
             isInt: {msg: "la hora debe de ser un entero"},
             max: {args: 23,msg: "La hora tiene que ser menor que 23"},
-            min: {args: 0, msg: "La hora debe de ser mayor que 0"}
         }
     } 
 });
@@ -66,6 +66,7 @@ const Asamblea = sequelize.define('asamblea',{
 const Vote = sequelize.define('votes',{
     id: {
         primaryKey: true,
+        autoIncrement: true,
         type: Sequelize.INTEGER,
         allowNull: false,
         validate: {
@@ -104,7 +105,7 @@ const Vote = sequelize.define('votes',{
         validate: {
             isInt: {msg: "la hora debe de ser un entero"},
             max: {args: 23,msg: "La hora tiene que ser menor que 23"},
-            min: {args: 0, msg: "La hora debe de ser mayor que 0"}
+//            min: {args: 0, msg: "La hora debe de ser mayor que 0"}
         }
     } 
 });
