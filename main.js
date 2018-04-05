@@ -45,8 +45,8 @@ bot.onText(/\/start/, (msg,match) => {
 
 bot.onText(/\/AnadeFecha/, (msg) => {
     let chat_id = msg.chat.id;
-    let keyboard = get_day_keyboard(23,32);
-    bot.sendMessage(chat_id,"Por favor selecciona la Hora",{
+    let keyboard = get_day_keyboard(null,null);
+    bot.sendMessage(chat_id,"Por favor selecciona la Fecha",{
         reply_markup: {
             inline_keyboard: keyboard,
         }
@@ -57,18 +57,20 @@ bot.onText(/\/AnadeFecha/, (msg) => {
 bot.on('callback_query', callbackQuery => {
     const min = 9;
     const max = 21;
-    const data = callbackQuery.data;
+    let data = callbackQuery.data;
     let msg = callbackQuery.message;
     const regExp = new RegExp(/[1-9]+ [0-9]/);
     const splitDay = new RegExp(/[1-9]+/);
     const splitMonth = new RegExp(/ [0-9]+/);
     const setHourDb = new RegExp(/[0-9]+/);
     let validateHour = new RegExp(/[0-9]?[0-9]:00/);
+    let getprevpostMonth = new RegExp(/\d/);
     let it = max-min;
     let horas = [];
     let date;
     let month;
     let day;
+    let year;
 
     console.log(data);
 
@@ -87,7 +89,7 @@ bot.on('callback_query', callbackQuery => {
                     }
                     horas.forEach(hora => {
                         valid_hour = setHourDb.exec(hora)[0].trim();
-                        store_vote_DB(msg.chat.id,valid_hour,new Date(`${date.getFullYear()}/${parseInt(month)+1}/${day}`));
+                        store_vote_DB(msg.chat.id,valid_hour,new Date(`${date.getFullYear()}/${month}/${day}`));
                     });
                     return;
                 }
@@ -108,8 +110,44 @@ bot.on('callback_query', callbackQuery => {
         });
     };
 
-
-    if(!regExp.test(data)){
+    if(data.includes("prev")){
+        data = data.split(" ");
+        month = parseInt(data[1]);
+        year = parseInt(data[2]);
+        console.log(year);
+        if(month == 0){
+            year--;
+            month = 12;
+        }
+        bot.editMessageText(`Mes cambiado a ${get_month_name(month-1)}`, {
+            chat_id: msg.chat.id,
+            message_id: msg.message_id,
+            reply_markup:{
+                inline_keyboard: get_day_keyboard(month,year)
+            }
+        });
+        return
+    }else if(data.includes("post")){
+        data = data.split(" ");
+        month = parseInt(data[1])+2;
+        year = parseInt(data[2]);
+        console.log(year);
+        if(month == 13){
+            year++;
+            month = 1;
+        }
+        bot.editMessageText(`Mes cambiado a ${get_month_name(month-1)}`, {
+            chat_id: msg.chat.id,
+            message_id: msg.message_id,
+            reply_markup:{
+                inline_keyboard: get_day_keyboard(month,year)
+            }
+        });
+        return
+        bot.sendMessage(msg.chat.id,"Cambio de mes prev");
+        console.log(`Cambio post mes ${msg.chat.username}`);
+        return;
+    }else if(!regExp.test(data)){
         bot.sendMessage(msg.chat.id,"Has elegido una opcion no valida\nVuelve a elegir");
         console.log(`Opcion de fecha invalida de ${msg.chat.username}`);
         return;
@@ -117,9 +155,9 @@ bot.on('callback_query', callbackQuery => {
     //Creates the date object
     date = new Date()
     day = splitDay.exec(data)[0];
-    month = splitMonth.exec(data)[0].trim();
+    month = parseInt(splitMonth.exec(data)[0].trim())+1;
     //Sends confirmation msg
-    bot.editMessageText(`Has elegido el dia ${data[0]} del mes ${data[1]}`, {
+    bot.editMessageText(`Has elegido el dia ${day} del mes ${month}`, {
         chat_id: msg.chat.id,
         message_id: msg.message_id,
     });
@@ -178,7 +216,7 @@ let store_vote_DB = (votante,hora,fecha) => {
                 fecha: fecha,
                 hora: hora
             }).then(asamblea =>{
-                console.log("Error +"+asamblea);
+                console.log("No existia asamblea en esa fecha y la he creado");
                 insert_data(asamblea.id);
             })
             return;
@@ -189,14 +227,14 @@ let store_vote_DB = (votante,hora,fecha) => {
 
 
 
-let get_day_keyboard = (min,max) =>{
-    let d = new Date();
-    let keyboard = get_header(get_month_name(d.getMonth()));
+let get_day_keyboard = (month,year) =>{
+    let d = (month === null || year  === null) ? new Date() : new Date(`${year}/${month}/1`);
+    let keyboard = get_header(d.getMonth(),d.getFullYear());
     keyboard = keyboard.concat(get_days(d));
     return keyboard;
 }
-let get_header = (header) => {
-    return [[set_btn("<",null),set_btn(header,null),set_btn(">",null)],
+let get_header = (header,year) => {
+    return [[set_btn("<",`prev ${header} ${year}`),set_btn(get_month_name(header),null),set_btn(">",`post ${header} ${year}`)],
     [set_btn("L",null),set_btn("M",null),set_btn("X",null),set_btn("J",null),set_btn("V",null),set_btn("S",null),set_btn("D",null)]];
 }
 let set_btn = (btntext,data) => {
@@ -251,6 +289,10 @@ let get_month_name = month => {
     return monthNames[month];
 
 }
+
+let get_month_number = mon => {
+    return new Date(Date.parse(mon +" 1, 2012")).getMonth()+1
+ }
 
 let get_hour_keyboard = (min,max) => {
     let keyboard = [];
