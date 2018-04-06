@@ -58,18 +58,24 @@ bot.onText(/\/AnadeFecha/, (msg) => {
 
 bot.onText(/\/BorraFecha/, msg =>{
     user_id = msg.chat.id;
-    let keyboard = [];
-
-    votes.findAll({where:{
+    model.Vote.findAll({where:{
         votante: user_id
     }}).mapSeries(voto =>{
         if(voto === null){
             throw new Error("No ha votado");
         }
-        return votante;
-    }).then(voto =>{
-        let text = `Fecha: ${voto.fecha} Hora ${voto.hora}`;
-        keyboard.push([set_btn(text,`REMOVE ${voto.id}`)]);
+        let text = `Fecha: ${voto.fecha} Hora ${voto.hora}:00`;
+        return [set_btn(text,`REMOVE ${voto.id}`)];
+    }).then(keyboard =>{
+        keyboard = keyboard.concat([[set_btn(`No quiero eliminar nada`,'REMOVE NADA')]])
+        console.log(keyboard);
+        bot.sendMessage(msg.chat.id,"Seleccione que voto quiere eliminar",{
+            reply_markup:{
+                inline_keyboard: keyboard
+            }
+        })
+    }).catch(error =>{
+        console.log(error.msg);
     })
 });
 
@@ -135,7 +141,7 @@ bot.on('callback_query', callbackQuery => {
     if(data.includes("SET")){
         addFechas(data.split("SET ").pop(),msg)
     }else if(data.includes("REMOVE")){
-        removeVote(data.split("REMOVE ").pop())
+        removeVote(data.split("REMOVE ").pop(),msg)
     }
 
 });
@@ -264,6 +270,24 @@ let addFechas = (data,msg) => {
     }).catch(error => {
         console.log(error);
     });
+}
+
+let removeVote = (data,msg) =>{
+    if(data === "NADA"){
+        bot.editMessageText(`No se ha eliminado Nada`, {
+            chat_id: msg.chat.id,
+            message_id: msg.message_id,
+        });
+        return;
+    }
+    model.Vote.destroy({where: {
+        id: data
+    }});
+    bot.editMessageText(`Se ha eliminado su voto`, {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+    });
+    console.log("Se ha borrado voto");
 }
 
 let store_vote_DB = (votante,hora,fecha) => {
