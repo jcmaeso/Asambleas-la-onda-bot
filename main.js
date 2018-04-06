@@ -116,7 +116,6 @@ bot.on('callback_query', callbackQuery => {
 
     console.log(data);
 
-
     let read_msg = (number_of_it_left) => {
         let valid_hour;
          bot.once('message', answer =>{        
@@ -243,14 +242,26 @@ let store_vote_DB = (votante,hora,fecha) => {
         });
     }
     let insert_data = id =>{
-        model.Vote.create({
+        model.Vote.count({where:{
             votante: votante,
             asamblea: id,
             fecha: fecha,
-            hora: hora 
-        }).catch(error => {
-            console.log(error);
+            hora: hora
+        }}).then(cuenta => {
+            if(cuenta === 0){
+                model.Vote.create({
+                    votante: votante,
+                    asamblea: id,
+                    fecha: fecha,
+                    hora: hora 
+                }).catch(error => {
+                    console.log(error);
+                })
+                return
+            }
+            console.log("Hora repetida");
         })
+
     }
     validate_data().then(insert_data).catch(error =>{
         if(error.message === "No hay asamblea en este dia creada"){
