@@ -2,6 +2,7 @@
 const TelegramBot = require('node-telegram-bot-api');
 const model = require('./model');
 const token = '559647678:AAFTXQnd6-VV50Itor04qxHob2FwmAh7FzM';
+const Promise = require('bluebird');
 const botOptions = {
     polling:{
         params:{
@@ -53,7 +54,48 @@ bot.onText(/\/AnadeFecha/, (msg) => {
     });
     console.log("Display Inline Keyboard");
 })
+
+bot.onText(/\/FechaMasVotada/, msg =>{
+    let chat_id = msg.chat.id;
+    let order_asambleas = new Map();
+
+
+    let order_array = (arr) =>{
+
+        arr.forEach(a =>{
+            //console.log("value +"+arr.votes);
+            if(a.votes > max_voted_ids.votes){
+                max_voted_ids = [{id:arr.id, votes:arr.votes}];
+                //console.log({id:arr.id, votes:arr.votes})
+            }else if(arr.votes === max_voted_ids.votes){
+                max_voted_ids.push({id:arr.id, votes:arr.votes});
+                //console.log({id:arr.id, votes:arr.votes});
+            }
+        })
+        return max_voted_ids;
+    }
+
+    model.Asamblea.findAll().mapSeries(asamblea => {            
+                return model.Vote.findAll({where:{asamblea: asamblea.id}}).then(votes =>{
+                    return {id: asamblea.id,votes: votes.length};
+                });
+    }).then((asambleas) =>{
+        let max_voted_ids = [{id:null, votes:0}];
+        console.log(asambleas);
+        asambleas.forEach(asamblea=>{
+            if(asamblea.votes > max_voted_ids[0].votes){
+                max_voted_ids = [asamblea];
+                //console.log({id:arr.id, votes:arr.votes})
+            }else if(asamblea.votes === max_voted_ids[0].votes){
+                max_voted_ids.push(asamblea);
+                //console.log({id:arr.id, votes:arr.votes});
+            }
+        });
+        return max_voted_ids;
+    }).then((mas_votados) => {console.log(mas_votados)});
+});
 //TODO: CAMBIAR EL MODELO DE DATOS DE LAS QUERYS
+//TODO: EN VOTACIONES SEPARADAS SE PUEDE VOTAR A LA MISMA FECHA 
 bot.on('callback_query', callbackQuery => {
     const min = 9;
     const max = 21;
