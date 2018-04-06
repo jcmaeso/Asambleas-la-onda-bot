@@ -75,6 +75,12 @@ bot.onText(/\/FechaMasVotada/, msg =>{
         return max_voted_ids;
     }
 
+    let search_asamblea_db = id =>{
+        return model.Asamblea.findAll({where: {
+            id: id
+        }})
+    }
+
     model.Asamblea.findAll().mapSeries(asamblea => {            
                 return model.Vote.findAll({where:{asamblea: asamblea.id}}).then(votes =>{
                     return {id: asamblea.id,votes: votes.length};
@@ -92,7 +98,15 @@ bot.onText(/\/FechaMasVotada/, msg =>{
             }
         });
         return max_voted_ids;
-    }).then((mas_votados) => {console.log(mas_votados)});
+    }).each((mas_votado) => {
+        console.log("MAS_VOTADO");
+        console.log(mas_votado);
+        return model.Asamblea.findAll({where: {
+        }}).mapSeries(asamblea => {
+            console.log(asamblea);
+            bot.sendMessage(chat_id,`Asamblea:\n Fecha: ${asamblea.fecha} \nHora: ${asamblea.hora}:00\nNº Votos: ${mas_votado.votes}`)
+        });
+    });
 });
 //TODO: CAMBIAR EL MODELO DE DATOS DE LAS QUERYS
 //TODO: EN VOTACIONES SEPARADAS SE PUEDE VOTAR A LA MISMA FECHA 
