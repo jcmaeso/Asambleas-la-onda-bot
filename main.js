@@ -44,6 +44,7 @@ bot.onText(/\/start/, (msg,match) => {
         });
 });
 
+
 bot.onText(/\/AnadeFecha/, (msg) => {
     let chat_id = msg.chat.id;
     let keyboard = get_day_keyboard(null,null);
@@ -54,6 +55,23 @@ bot.onText(/\/AnadeFecha/, (msg) => {
     });
     console.log("Display Inline Keyboard");
 })
+
+bot.onText(/\/BorraFecha/, msg =>{
+    user_id = msg.chat.id;
+    let keyboard = [];
+
+    votes.findAll({where:{
+        votante: user_id
+    }}).mapSeries(voto =>{
+        if(voto === null){
+            throw new Error("No ha votado");
+        }
+        return votante;
+    }).then(voto =>{
+        let text = `Fecha: ${voto.fecha} Hora ${voto.hora}`;
+        keyboard.push([set_btn(text,`REMOVE ${voto.id}`)]);
+    })
+});
 
 bot.onText(/\/FechaMasVotada/, msg =>{
     let chat_id = msg.chat.id;
@@ -111,10 +129,26 @@ bot.onText(/\/FechaMasVotada/, msg =>{
 //TODO: CAMBIAR EL MODELO DE DATOS DE LAS QUERYS
 //TODO: EN VOTACIONES SEPARADAS SE PUEDE VOTAR A LA MISMA FECHA 
 bot.on('callback_query', callbackQuery => {
+
+    let data = callbackQuery.data.toString();
+    let msg = callbackQuery.message;
+    if(data.includes("SET")){
+        addFechas(data.split("SET ").pop(),msg)
+    }else if(data.includes("REMOVE")){
+        removeVote(data.split("REMOVE ").pop())
+    }
+
+});
+
+bot.on("error", error =>{
+    console.log(error.msg);
+})
+
+
+
+let addFechas = (data,msg) => {
     const min = 9;
     const max = 21;
-    let data = callbackQuery.data;
-    let msg = callbackQuery.message;
     const regExp = new RegExp(/[1-9]+ [0-9]/);
     const splitDay = new RegExp(/[1-9]+/);
     const splitMonth = new RegExp(/ [0-9]+/);
@@ -129,6 +163,7 @@ bot.on('callback_query', callbackQuery => {
     let year;
 
     console.log(data);
+    console.log("Entro");
 
     let read_msg = (number_of_it_left) => {
         let valid_hour;
@@ -211,6 +246,9 @@ bot.on('callback_query', callbackQuery => {
     date = new Date()
     day = splitDay.exec(data)[0];
     month = parseInt(splitMonth.exec(data)[0].trim())+1;
+    console.log(data);
+    console.log(day);
+    console.log(month);
     //Sends confirmation msg
     bot.editMessageText(`Has elegido el dia ${day} del mes ${month}`, {
         chat_id: msg.chat.id,
@@ -226,12 +264,7 @@ bot.on('callback_query', callbackQuery => {
     }).catch(error => {
         console.log(error);
     });
-});
-
-bot.on("error", error =>{
-    console.log(error.msg);
-})
-
+}
 
 let store_vote_DB = (votante,hora,fecha) => {
     console.log(fecha);
@@ -301,7 +334,7 @@ let get_day_keyboard = (month,year) =>{
     return keyboard;
 }
 let get_header = (header,year) => {
-    return [[set_btn("<",`prev ${header} ${year}`),set_btn(get_month_name(header),null),set_btn(">",`post ${header} ${year}`)],
+    return [[set_btn("<",`SET prev ${header} ${year}`),set_btn(get_month_name(header),null),set_btn(">",`SET post ${header} ${year}`)],
     [set_btn("L",null),set_btn("M",null),set_btn("X",null),set_btn("J",null),set_btn("V",null),set_btn("S",null),set_btn("D",null)]];
 }
 let set_btn = (btntext,data) => {
@@ -321,7 +354,7 @@ let get_days = (date) =>{
     let c_date;
     for(let i = 1; i <= get_end_of_month(date.getMonth()+1,date.getFullYear()); i++){
         c_date = new Date(`${date.getFullYear()}/${date.getMonth()+1}/${i}`);
-        week.push(set_btn(i,`${i} ${date.getMonth()}`));
+        week.push(set_btn(i,`SET ${i} ${date.getMonth()}`));
         if(c_date.getDay() === 0){
             weeks.push(week);
             week = [];
